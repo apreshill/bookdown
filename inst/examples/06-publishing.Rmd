@@ -58,6 +58,7 @@ Once you have gotten to the stage where your book files are **stored** in the cl
 
 One benefit to this approach compared to the [previous approach](#ghpages) is that your master branch on GitHub will no longer store the rendered book files (i.e., the folders `_book` and `_bookdown_files`). Instead, those files will be present in a separate branch: the `gh-pages` branch. This means that your master branch will contain only the source files, and your `gh-pages` branch will contain only the files from your `_book` folder. Another benefit to this approach is that you are able to make changes to your book source files without needing to locally render the book. This may be useful both when collaborating with yourself or with other people. 
 
+
 ### About Travis {#travis}
 
 In case you are not familiar with Travis CI\index{Travis CI} (https://travis-ci.org), it is a service to continuously check your software in a virtual machine whenever you push changes to GitHub. It is a free service for public repositories on GitHub, and was designed for continuous integration (CI) of software packages. Travis CI can be connected to GitHub in the sense that whenever you push to GitHub, Travis can be triggered to run certain commands/scripts on the latest version of your repository.^[You need to authorize the Travis CI service for your repository on GitHub first. See https://docs.travis-ci.com/user/getting-started/ for how to get started with Travis CI.] These commands are specified in a YAML file named `.travis.yml` in the root directory of your repository, and they are usually for the purpose of testing software, but in fact they are quite open-ended, meaning that you can run arbitrary commands on a Travis (virtual) machine. That means you can certainly run your own scripts to build your book on Travis. Note that Travis only supports Ubuntu and Mac OS X at the moment, so you should have some basic knowledge about Linux/Unix commands. 
@@ -67,20 +68,23 @@ In case you are not familiar with Travis CI\index{Travis CI} (https://travis-ci.
 
 Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.]
 
-If you are starting from the [previous approach](#ghpages), we will not need to disable Jekyll (so you do not need to worry about `.nojekyll` files, and you may wish to delete it if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below).
+If you are starting from the [previous approach](#ghpages), we will not need to disable Jekyll (so you may wish to delete the `.nojekyll` file if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below).
 
-### Instruct Travis to build your book from GitHub
+### Instruct Travis to build your book from GitHub {#travis-yml}
 
-+ Since this Travis service is primarily for checking R packages, you will need a (fake) `DESCRIPTION` file as if the book repository were an R package. You may use the command line to enter `touch DESCRIPTION` (or in R: `file.create('DESCRIPTION')`). The only thing in this file that really matters for a **bookdown** project is the specification of dependencies. All dependencies will be installed via the **devtools** package. If a dependency is on CRAN or BioConductor, you can simply list it in the `Imports` field of the `DESCRIPTION` file. If it is on GitHub, you may use the `Remotes` field to list its repository name. Below is an example:
++ Since this Travis service is primarily for checking R packages, you will need a (fake) `DESCRIPTION` file as if the book repository were an R package. You may use the command line to enter `touch DESCRIPTION` (or in R: `file.create('DESCRIPTION')`). The only thing in this file that really matters for a **bookdown** project is the specification of dependencies. All dependencies will be installed via the **devtools** package. If a dependency is on CRAN or BioConductor, you can simply list it in the `Imports` field of the `DESCRIPTION` file. If it is a package on GitHub, you will need to include the `USER/REPO` in the `Remotes` field, *and* add the package name to the `Imports` field as well (so GitHub packages will be listed in two places in this file). Below is an example:
 
     ```dcf
     Package: placeholder
     Type: Book
     Title: Does not matter.
     Version: 0.0.1
+    URL: https://github.com/<USER>/<REPO>
     Imports: bookdown, ggplot2
     Remotes: rstudio/bookdown
     ```
+    
+    In the `URL` field, fill in your GitHub user name (`<USER>`) and the name of the repository (`<REPO>`). This field is not required by Travis, but can allow you to take advantage of some helpful `browse_*()` functions from the **usethis** package (https://usethis.r-lib.org/).
 
 + In addition to the `DESCRIPTION`, you also need to tell Travis how to build the book in a new file called `.travis.yml`. You can create this file in the terminal with:
 
@@ -110,7 +114,7 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
 
   This file tells Travis CI what to do. The `language` key tells Travis to use a virtual machine that has R installed. At a high-level, `script` tells Travis how to build the book; `deploy` gives Travis instructions for deploying the book.
   
-+ You may wish to backup your local copies of the `_book` (unless you have modified your `output_dir` in your `_bookdown.yml` file) first, but you can safely delete and ignore both of these folders- these will now be built by Travis. An easy way to edit the `.gitignore` file is to use the **usethis** package (https://usethis.r-lib.org), with the function [`edit_git_ignore()`](https://usethis.r-lib.org/reference/edit.html). If your book was created as part of an R Project, your updated `.gitignore` would then look like this:
++ You may wish to backup your local copies of the `_book` (unless you have modified your `output_dir` in your `_bookdown.yml` file) first, but you can safely delete and ignore both of these folders- these will now be built by Travis. You can open the `.gitignore` file and edit it directly. If your book was created as part of an R Project, your updated `.gitignore` would then look like this:
 
     ```
     .Rproj.user
@@ -120,7 +124,18 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
     _book
     _bookdown_files
     ```
+    
     You will still be able to build and preview your book locally (this will re-create your local `_book` folder), but those folders will no longer appear on your master branch in your remote GitHub repository.^[You must edit the `.gitignore` file **and** delete these local files, then commit/push to GitHub *before* building the book locally again for these changes to take effect.] 
+    
+    You could also use the function `edit_git_ignore()` function (https://usethis.r-lib.org/reference/edit.html) from the **usethis** package from within your R console. 
+    
+    ```{r eval = FALSE}
+    ## install if needed (do this exactly once):
+    ## install.packages("usethis")
+
+    library(usethis)
+    edit_git_ignore()
+    ```
     
 + **Optional: Caching on Travis**  If you use the [container-based infrastructure](https://docs.travis-ci.com/user/workers/container-based-infrastructure/) on Travis, you can enable caching by using `sudo: false` in `.travis.yml`. Normally you should cache at least two types of directories: the figure directory (e.g., `_main_files`) and the cache directory (e.g., `_main_cache`). These directory names may also be different if you have specified the **knitr** chunk options `fig.path` and `cache.path`, but I'd strongly recommend you not to change these options. The figure and cache directories are stored under the `_bookdown_files` directory of the book root directory. A `.travis.yml` file that has enabled caching of **knitr** figure and cache directories may have additional configurations `sudo` and `cache` like this:
 
@@ -138,13 +153,13 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
 
   If your book is very time-consuming to build, you may use the above configurations on Travis to save time. Note that `packages: yes` means the R packages installed on Travis are also cached.
     
-### Instruct Travis to publish your book on GitHub Pages
+### Instruct Travis to publish your book on GitHub Pages {#travis-publish}
 
 The Travis documentation shows how to deploy a site to GitHub Pages after a successful build: https://docs.travis-ci.com/user/deployment/pages/. You will need to grant Travis write access to your GitHub repository by providing a personal access token (PAT), and set the deployment provider details in `.travis.yml`. Here are a few steps you may follow:
 
-  + First, create a [personal access token](http://bit.ly/2cEBYWB) for your account on GitHub with the `public_repo` or `repo` scope (`repo` is required for private repositories). You can view your PATs at https://github.com/settings/tokens. Be sure to copy the token to your clipboard; you may also wish to leave this browser window open while you navigate to Travis just in case. 
+  + First, create a [personal access token](http://bit.ly/2cEBYWB) for your account on [GitHub](https://github.com/) with the `public_repo` or `repo` scope (`repo` is required for private repositories). You can view your PATs at https://github.com/settings/tokens. Be sure to copy the token to your clipboard; you may also wish to leave this browser window open while you navigate to Travis just in case. 
     
-  + Next, go to `https://travis-ci.org/<USER>/<REPO>/settings` and save this as an "Environment variable", where `NAME` is anything you want it to be (we use `GITHUB_PAT` here as a placeholder only), and `VALUE` is where you paste the PAT from GitHub. You can leave the toggle button to right as is- this will keep your PAT private and will not show the value in your public build log. Click "Add". 
+  + Next, go to `https://travis-ci.org/<USER>/<REPO>/settings` (or with the **usethis** package; the function `browse_travis()`) and save this as an "Environment variable", where `NAME` is anything you want it to be (we use `GITHUB_PAT` here as a placeholder only), and `VALUE` is where you paste the PAT from GitHub. You can leave the toggle button to right as is- this will keep your PAT private and will not show the value in your public build log. Click "Add". 
     + If you know how to install and use the [Travis command-line tool](https://docs.travis-ci.com/user/environment-variables#defining-encrypted-variables-in-travisyml), you may instead encrypt it in the environment variable `GITHUB_PAT` via command line `travis encrypt` and store it in `.travis.yml`, e.g `travis encrypt GITHUB_PAT=TOKEN`. 
     
   + From your local **bookdown** project files, **add** the following section to your `.travis.yml` (see above for an example full `.travis.yml` file):
@@ -159,7 +174,7 @@ The Travis documentation shows how to deploy a site to GitHub Pages after a succ
     ```
   The option `on` specifies that the deployment will only occur when the master branch is built. The `local_dir` option is the publish directory, which should be `_book` (unless you changed your `output_dir` in your `_bookdown.yml` file). Although not shown here, there is also a `target-branch` option, which specifies the branch where Travis should push the contents in the `local_dir` to, defaults to the `gh-pages` branch. Note that you do not need to create the `gh-pages` branch first- if one does not exist, Travis will create it on your first push.
     
-  + Once you have your `DESCRIPTION`, `.travis.yml`, and `.gitignore` files ready, commit and push your changes to GitHub. This will trigger a new build on Travis; you should be able to watch your book's build progress on `https://travis-ci.org/<USER>/<REPO>`. A successful build will end with log entries like:
+  + Once you have your `DESCRIPTION`, `.travis.yml`, and `.gitignore` files ready, commit and push your changes to GitHub. This will trigger a new build on Travis; you should be able to watch your book's build progress on `https://travis-ci.org/<USER>/<REPO>` (or `usethis::browse_travis()`) . A successful build will end with log entries like:
     
       ```bash
       The command "Rscript -e 'bookdown::render_book("index.Rmd")'" exited with 0.
@@ -169,11 +184,30 @@ The Travis documentation shows how to deploy a site to GitHub Pages after a succ
       Done. Your build exited with 0.
       ```
 
-  + Following a successful build on Travis, navigate to your GitHub repository (you can do this from Travis by clicking on the octocat logo at the top of the page). From `https://github.com/<USER>/<REPO>`, confirm that you see a `gh-pages` branch. Click on the repository's settings and under "GitHub Pages" and change the "Source" to be "gh-pages branch": 
+### Activate GitHub Pages {#activate-ghpages}
+
+  + Following a successful build on Travis, navigate to your GitHub repository (you can do this from Travis by clicking on the octocat logo at the top of the page, or `usethis::browse_github()`). From `https://github.com/<USER>/<REPO>`, confirm that you see a `gh-pages` branch. Click on the repository's settings and under "GitHub Pages" and change the "Source" to be "gh-pages branch": 
     
     ![Screenshot of selecting gh-pages branch for GitHub Pages](images/ghpages-branch.png)
 
-  + **Optional: test your pipeline** You only need to do the steps above in sequence *once* per project. In your local **bookdown** project, make a small insignificant change- you could add a line of text to the top of your `index.Rmd` file that says "Testing my Travis and GitHub pipeline." Commit and push to GitHub (note: you do not have to build your book locally first!), then log onto Travis (`https://travis-ci.org/<USER>/<REPO>`) and GitHub (`https://github.com/<USER>/<REPO>`) and watch as your book gets built and committed to your `gh-pages` branch. A few minutes after your last push to GitHub, you should see your extra line of text appear at `https://<USER>.github.io/<REPO>`.
+  + **Optional: test your pipeline** You only need to do the steps above in sequence *once* per project. To see how this works, you can test the pipeline now. In your local **bookdown** project, make a small insignificant change- you could add a `subtitle` field in the YAML of your `index.Rmd` file like:
+
+    ```
+    --- 
+    title: "A Minimal Book Example"
+    subtitle: "I'm a book built in the cloud!"
+    site: bookdown::bookdown_site
+    ---
+    ```
+    
+    Commit and push to GitHub (note: you do not have to build your book locally first!), then log onto Travis (`https://travis-ci.org/<USER>/<REPO>`) and GitHub (`https://github.com/<USER>/<REPO>`) and watch as your book gets built and committed to your `gh-pages` branch. A few minutes after your last push to GitHub, you should see your extra line of text appear at `https://<USER>.github.io/<REPO>`. 
+    Alternatively you could run these **usethis** functions in your R console to pull up both relevant websites:
+    ```{r eval = FALSE}
+    library(usethis)
+    browse_travis()
+    browse_github()
+    ```
+     
 
 ### Optional: separate build and deploy scripts
 
@@ -238,9 +272,10 @@ All above scripts and configurations can be found in the `bookdown-travis-branch
 
 ## Netlify
 
-Netlify (https://www.netlify.com/) is another option for hosting your static **bookdown** site, similiar to [GitHub Pages](#ghpages). Like GitHub Pages, Netlify provides a free plan that actually has quite a lot of useful features. However, Netlify offers a few additional features that might make it a better option for you depending on your needs. and your website will be online in a few seconds with a random subdomain name of the form `http(s)://random-word-12345.netlify.com` provided by Netlify (you can customize the name). 
+Netlify (https://www.netlify.com/) is another option for hosting your static **bookdown** site, similiar to [GitHub Pages](#ghpages). Like GitHub Pages, Netlify provides a free plan that actually has quite a lot of useful features. However, Netlify offers a few additional features like branch deploys and deploy previews. When you create a static site through Netlify, your website will be online in a few seconds with a random subdomain name of the form `http(s)://random-word-12345.netlify.com` provided by Netlify (you can customize the name). 
 
-If you do not already have a Netlify account and you do have a GitHub account, we suggest you when you "Sign Up" and you see the options "Sign up with one of the following:" that you select `GitHub`.
+If you do not already have a Netlify account and you do have a GitHub account, we suggest you when you "Sign Up" and you see the options "Sign up with one of the following:" that you select `GitHub`. 
+
 
 ### Drag-and-drop deploy
 
@@ -250,7 +285,7 @@ The quickest way to deploy your **bookdown** book via Netlify is to log in and s
 
 ![Screenshot of drag and drop deploy box on Netlify](images/netlify-drag-drop.png)
 
-From your **bookdown** project, build your book locally, then drag and drop the output directory (`_book` by default, unless you changed this in your `_bookdown.yml` file). You should see your book with a random domain.
+From your **bookdown** project, build your book locally, then drag and drop the output directory (`_book` by default, unless you changed this in your `_bookdown.yml` file). You should see your book deploys quickly with a random subdomain name of the form `http(s)://random-word-12345.netlify.com`.
 
 You *can* update this kind of site, but it is a manual update. In the Netlify UI, find your site and click on "Deploys". You should see this box (you may need to scroll to the bottom of this page):
 
@@ -266,9 +301,9 @@ As described in the Netlify documentation (https://www.netlify.com/docs/continuo
 
 Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.]
 
-Note that you do not need to worry about `.nojekyll` files (you may wish to delete it if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below). Also check your `.gitignore` to make sure that you are *not* ignoring the `_book` directory.
+If you have been trying out other publishing approaches like [using GitHub Pages](gh-pages), note that you do not need to worry about a `.nojekyll` file (you may wish to delete it if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the sample code we provide). Also check your `.gitignore` to make sure that you are *not* ignoring the `_book` directory.
 
-We'll walk through assuming you are working from a GitHub repository, but Netlify currently supports GIT repositories hosted on GitHub, GitLab, and BitBucket. The following steps are the same regardless: 
+The following steps will assume you are working from a GitHub repository, but Netlify currently supports GIT repositories hosted on GitHub, GitLab, and BitBucket.
 
 + Log in to Netlify.
 
@@ -282,19 +317,34 @@ We'll walk through assuming you are working from a GitHub repository, but Netlif
 
   + *Step 3: Build options, and deploy!* Start with deploying the master branch only. For the "Basic build settings", leave the Build Command blank. For the Publish Directory, choose your output directory- this will be `_book` by default.
 
-+ **Optional: test your pipeline** In your local **bookdown** project, make a small insignificant change- you could add a line of text to the top of your `index.Rmd` file that says "Testing my Netlify and GitHub pipeline." Build your book locally, then commit and push all changes to GitHub. On Netlify, go to your site's page and click on "Deploy" to watch the deploy progress. A few minutes after your last push to GitHub, you should see your extra line of text appear at `http(s)://random-word-12345.netlify.com`.
++ **Optional: test your pipeline** In your local **bookdown** project, make a small insignificant change- you could add a `subtitle` field in the YAML of your `index.Rmd` file like:
+
+    ```
+    --- 
+    title: "A Minimal Book Example"
+    subtitle: "I'm a book continuously deployed on Netlify!"
+    site: bookdown::bookdown_site
+    ---
+    ```
+    
+    Build your book locally, then commit and push all changes to GitHub. On Netlify, go to your site's page and click on "Deploy" to watch the deploy progress. A few minutes after your last push to GitHub, you should see your extra line of text appear at `http(s)://random-word-12345.netlify.com`.
 
 + **Optional: change the default subdomain** On Netlify from your site's landing page, click on *Overview > Site Settings*. Under "Site information" click on "Change site name" and update to `http(s)://<SUBDOMAIN-YOU-WANT-HERE>.netlify.com`. If you want to use a different domain, you need to configure some DNS records of the domain to point it to the Netlify server. 
 
 ## Travis + Netlify
 
-Here we provide several beginner to advanced workflows for using Travis CI to build your book, then using Netlify to deploy your book. In case you are not familiar with Travis CI (https://travis-ci.org), you may want to read this [section](#travis) from Chapter \@ref(travis). 
+Here we provide a beginner and an advanced workflow for using Travis CI to build your book, then using Netlify (free features only) to deploy your book. In case you are not familiar with Travis CI (https://travis-ci.org), you may want to read this [section](#travis) from Chapter \@ref(travis). 
+
+
+If you are starting from any of the previous approaches, we will not need to disable Jekyll (so you do not need to worry about `.nojekyll` files, and you may wish to delete it if created from Chapter \@ref(ghpages)). Also, if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below).
+
+### Branch deploy {#netlify-branch}
+
+This is a good workflow to start off integrating Travis and Netlify. We'll have Travis push the built book to the `gh-pages` branch (as in Chapter \@ref(travis)), but then we will link that branch (instead of the `master` branch) to Netlify. This takes advantage of Netlify's branch-specific auto-deployment feature, which will ignore any pushes to `master` and will only trigger a new deploy when Travis pushes a commit to the `gh-pages` branch.^[This avoids an awkward side effect of linking your `master` branch to both Travis and Netlify, which is that your site will go down whenever you first push a commit to GitHub. It would come back up once Travis pushes the built book back to `master`, but this is not really optimal. So we encourage you to start by *not* linking the same branches to both Travis and Netlify.] Deploys from the `gh-pages` branch **only** will be published automatically by Netlify.
 
 + Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not have one, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.] 
 
-+ Follow all of the steps described in Chapter \@ref(travis), with the only exception that you do not need to go online to GitHub and edit the repository settings.
-
-+ Your remote GitHub repository at `https://github.com/<USER>/<REPO>` should also have the following files in place:
++ Follow all of the steps described in Chapter \@ref(travis-yml). Your remote GitHub repository at `https://github.com/<USER>/<REPO>` (`usethis::browse_github()`) should now have the following files in place:
 
   + `DESCRIPTION`, 
   
@@ -302,7 +352,7 @@ Here we provide several beginner to advanced workflows for using Travis CI to bu
   
   + `.gitignore` that includes `_book` (or whatever your `output_dir` is from your `_bookdown.yml` file) and `_bookdown_files`
 
-+ Your most recent build log on `https://travis-ci.org/<USER>/<REPO>` should end with log entries like:
++ Log on to Travis (`https://travis-ci.org/<USER>/<REPO>` or `usethis::browse_travis()`). Your most recent build should be *green* and end with log entries like:
     
   ```bash
   The command "Rscript -e 'bookdown::render_book("index.Rmd")'" exited with 0.
@@ -311,14 +361,6 @@ Here we provide several beginner to advanced workflows for using Travis CI to bu
   Deploying application
   Done. Your build exited with 0.
   ```
-
-If you are starting from any of the previous approaches, we will not need to disable Jekyll (so you do not need to worry about `.nojekyll` files, and you may wish to delete it if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below).
-
-### Deploy from `gh-pages` branch
-
-This is a good workflow to start off integrating Travis and Netlify. 
-
-+ Follow all of the steps described in that section, with the only exception that you do not need to go online to GitHub and edit the repository settings. Instead, we'll have Travis push the built book to the `gh-pages` branch (as before), but then we will link that branch (instead of the `master` branch) to Netlify. This takes advantage of Netlify's branch-specific auto-deployment feature, which will ignore any pushes to `master` and will only trigger a new deploy when Travis pushes a commit to the `gh-pages` branch.^[This avoids an awkward side effect of linking your `master` branch to both Travis and Netlify, which is that your site will go down whenever you first push a commit to GitHub. It would come back up once Travis pushes the built book back to `master`, but this is not really optimal. So we encourage you to start by *not* linking the same branches to both Travis and Netlify.]
 
 + Log in to Netlify, then do: *New site from Git > GitHub*
 
@@ -335,9 +377,9 @@ This is a good workflow to start off integrating Travis and Netlify.
 
 All above scripts and configurations can be found in the `bookdown-travis-branch-deploy` repository: https://github.com/apreshill/bookdown-travis-branch-deploy. Now, if you also read the section detailing how to use Travis + GitHub Pages in Chapter \@ref(travis-ghpages), the above instructions may seem repetitive- and they are! These two approaches are basically the same, and in fact you can host the same book source files on *both* a GitHub Project Page (https://apreshill.github.io/bookdown-travis-branch-deploy/) and a Netlify site (https://bookdown-travis-branch-deploy.netlify.com/). The main downside to both of these approaches is that, although your book is built in the cloud, ultimately what is hosted is a fully-rendered site, which means that the rendered book files exist on GitHub (although we have now moved them to the `gh-pages` branch, so they are at least not cluttering up your `master` branch). 
 
-### Use deploy contexts
+### Use deploy contexts {#netlify-prod}
 
-Use Netlify deployment context
+All of the workflows thus far that we have covered that employ Travis to build your **bookdown** book (deployed via [GitHub Pages](travis-ghpages), or via [Netlify](netlify-branch)) rely on storing the rendered book files (i.e., those in the `_book` directory) in a branch within your GitHub repository. However, you can use Travis to build your book and deploy it to Netlify, while keeping only the book source files in your GitHub repository. To do this, we make use of Netlify deploy contexts.
 
 + Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not have one, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.] 
 
@@ -365,21 +407,24 @@ Use Netlify deployment context
     
 + **Create a Netlify personal access token** 
 
-  + Log in to Netlify, and go to your account by clicking on your profile image at the top right, then select **"OAuth applications"** (https://app.netlify.com/account/applications). The Netlify site will lead you through two steps to generate then copy a personal access token (you may want to keep this browser window open).
+  Log in to Netlify, and go to your account by clicking on your profile image at the top right, then select **"OAuth applications"** (https://app.netlify.com/account/applications). The Netlify site will lead you through two steps to generate then copy a personal access token (you may want to keep this browser window open).
 
-  + On Travis, go to settings (`https://travis-ci.org/<USER>/<REPO>/settings`) and enter a new **"Environment variable"**. The name of the variable should be `NETLIFY_AUTH_TOKEN`, and the value should be the personal access token from Netlify.
+
++ **Tell Travis your Netlify personal access token** 
+
+  On Travis, go to settings (`https://travis-ci.org/<USER>/<REPO>/settings` or `usethis::browse_travis()`) and enter a new **"Environment variable"**. The name of the variable should be `NETLIFY_AUTH_TOKEN`, and the value should be the personal access token from Netlify.
 
 + **Create a new Netlify site** 
 
   + Go back to Netlify, then do: *New site from Git > GitHub*
 
-  + Click on **"Deploy site"** (don't change the branch to deploy or enter any basic build settings) We will override these in a moment so do not worry when you site does not deploy!
+  + Click on **"Deploy site"** (don't change the branch to deploy or enter any basic build settings). We will override these in a moment so do not worry when your site does not deploy!
 
-  + On Netlify, go to your site's *Overview > General > Site details > Site information*. What you want is your new site's `API ID`, which is a long string of numbers and letters. Copy that string.
+  + Go to your site's main page on Netlify then do: *Overview > General > Site details > Site information*. What you want is your new site's `API ID`, which is a long string of numbers and letters. Copy that string; we need to add it to your `.travis.yml` file.
 
 + **Instruct Travis how to build and deploy the book** 
 
-  + Add the Netlify `API ID` to your new `.travis.yml` file- paste that string as the new `NETLIFY_SITE_ID` (below):
+  Create (or edit) the `.travis.yml` file for your **bookdown** project as follows:
 
     ```
     language: R
@@ -409,11 +454,61 @@ Use Netlify deployment context
           branch: master
     ```
     
-    This `.travis.yml` has a lot going on! The `before_install` section installs the Netlify Command Line Interface (https://www.netlify.com/docs/cli/). This relies on Node.js version 8 or higher, which is installed on the first line that starts with `nvm` (stands for node version m,anager). The next line installs the Netlify tool using `npm`, a command line interface program to manage node.js libraries (stands for node package manager). The `env` section is where you store the Netlify `API ID` as the `NETLIFY_SITE_ID`, which tells Travis where to deploy the built book. The `script` tells Travis how to build the book. The `deploy` section tells Travis to use a script to deploy, then we use the Netlify Command Line Interface tool to deploy the build directory `_book` (this would be different if you changed the `output_dir` in your `_bookdown.yml`), and we tell Netlify to use the production context
+    This `.travis.yml` has a lot going on! The top portion is similar to the one we used earlier in Chapter \@ref(travis-yml). We have also added:
     
-  + The final step here is critical! In Netlify, go to your site's *Overview > Site settings > Build & deploy* and scroll down to **"Deployment contexts"** and enter these settings:
+    + A `before_install` section, which installs the Netlify Command Line Interface (https://www.netlify.com/docs/cli/). This relies on Node.js version 8 or higher, which is installed on the first line that starts with `nvm` (stands for node version manager). The next line installs the Netlify tool using `npm`, a command line interface program to manage node.js libraries (stands for node package manager). 
+    
+    + An `env` section, which is where you store the Netlify `API ID` as the `NETLIFY_SITE_ID`. This tells Travis where to deploy the built book. 
+    
+    + The `script` tells Travis how to build the book (the same script as we used in Chapter \@ref(travis-yml)). 
+    
+    + The `deploy` section tells Travis to use a script to deploy, then we use the Netlify Command Line Interface tool to deploy the build directory `_book` (this would be different if you changed the `output_dir` in your `_bookdown.yml`), and we tell Netlify to use the production context.
+    
++ **Trigger Travis to Build & Deploy**
+    
+  + Once you have your `DESCRIPTION`, `.travis.yml`, and `.gitignore` files ready, commit and push your changes to GitHub. This will trigger a new build on Travis; you should be able to watch your book's build progress on `https://travis-ci.org/<USER>/<REPO>` (or `usethis::browse_travis()`) . A successful build will end with log entries like:
+    
+      ```bash
+      The command "Rscript -e 'bookdown::render_book("index.Rmd")'" exited with 0.
+      
+      Preparing deploy
+      Deploying application
+      Done. Your build exited with 0.
+      ```
+    
++ **Instruct Netlify to Do Manual Deploys Only** 
+
+  The final step here is critical! Without this step, Netlify will attempt to deploy every time you push to your master branch on GitHub. This means two things will happen: 1) your site will go down when you first push, because there is no book to deploy (as Travis has not yet built it!), and 2) you'll have two deploys for every push (the second one deploys from Travis and so will work). We need to disable this Netlify feature. Go online to Netlify and go to your site's *Overview > Site settings > Build & deploy*.  Scroll down to **"Deploy contexts"** and enter these settings:
   
   ![On Netlify, change production branch to `no-branch`, and branch deploys to "None: Deploy on the production branch"](images/netlify-deploy-contexts.png)
+  
+  These settings essentially instruct Netlify to only do "manual deploys"- those that we tag with the production context label. If you look at our deploy script in your `.travis.yml`, we used the tag `--prod` to do this. You won't use this tag yourself- you'll only enable Travis to use it.
+  
+#### Optional: customize commit messages in your deploy script
+
+You can further customize your commit messages to be more specific. With these changes, the commit messages in your Netlify deploy logs will be meaningful: you can see the shorthand commit ID and your commit message for every site deploy.
+
++ Add one more line to `.travis.yml` in the `before_install` section as follows (keep all other YAML elements as before):
+
+  ```
+  before_install:
+    - export DEPLOY_MSG="${TRAVIS_COMMIT:0:7} ${TRAVIS_COMMIT_MESSAGE:0:70}"
+  ```
+
++ Add `--message "$DEPLOY_MSG"` to the Netlify deploy script, also in your `.travis.yml` file. 
+
+  ```
+  deploy:
+  - provider: script
+    script: netlify deploy --dir _book --prod --message "$DEPLOY_MSG"
+    skip_cleanup: true
+    on:
+      branch: master
+  ```
+
+### Demo repository
+
+All above scripts and configurations can be found in the `bookdown-travis-production-context` repository: https://github.com/apreshill/bookdown-travis-production-context.
 
 ## Publishers
 
