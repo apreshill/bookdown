@@ -21,9 +21,19 @@ If you have set up your own RStudio Connect server, you can certainly publish th
 
 ## GitHub Pages {#ghpages}
 
-You can host your book on GitHub\index{GitHub} for free via GitHub Pages (https://pages.github.com). The simplest approach is to publish your book as a GitHub Project Page from a `/docs` folder on your `master` branch as described in [GitHub Help](http://bit.ly/2cvloKV), which will then be available at `https://<USER>.github.io/<REPO>`.
+You can host your book on GitHub\index{GitHub} for free via GitHub Pages (https://pages.github.com).^[See the [GitHub Pages Help documents](http://bit.ly/2cvloKV) for more information.] The simplest approach is to publish your book as a GitHub Project Page from a `/docs` folder on your `master` branch, which will then be available at `https://<USER>.github.io/<REPO>`. 
 
-Below we provide instructions for how to setup publishing to a GitHub Project Page. We assume that you are starting with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.]
+```{block2, publish_start, type='rmdnote'}
+Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy. To create a simple **bookdown** book to practice with instead, we suggest the following steps:
+  
+  + [Make a new repository on GitHub](https://happygitwithr.com/new-github-first.html#make-a-repo-on-github-2),
+  + [Make a new RStudio Project via git clone](https://happygitwithr.com/new-github-first.html#new-rstudio-project-via-git-clone),
+  + From your RStudio Project, run this command in your R console: `bookdown:::bookdown_skeleton(getwd())`,
+  + [Change the title, save, and commit](https://happygitwithr.com/new-github-first.html#make-local-changes-save-commit-1),
+  + [Push your local changes to GitHub](https://happygitwithr.com/new-github-first.html#push-your-local-changes-to-github).                 
+```
+
+
 
 1. Because the **bookdown** HTML output is a static, standalone website, you'll need to tell GitHub that your website is *not* to be built via Jekyll. Jekyll (http://jekyllrb.com) is a static website builder, which GitHub Pages supports by default. The key is to create a hidden, empty file named `.nojekyll` in your **bookdown** root directory as follows:
 
@@ -54,9 +64,13 @@ Although this is a straight-forward approach to publishing your book, it can be 
 
 ## Travis + GitHub Pages {#travis-ghpages}
 
-Once you have gotten to the stage where your book files are **stored** in the cloud on GitHub, there are several additional steps to have your book also **built** and **deployed** in the cloud with every push to GitHub. The good news is that you only need to do these steps once; after that, building and deploying your site in the cloud is as easy as with the [previous approach](#ghpages): every time you push to your master branch, this will trigger a new book build in Travis, which will in turn trigger a fresh deploy to your GitHub Pages site at `https://<USER>.github.io/<REPO>`.
+Once you have gotten to the stage where your book files are **stored** in the cloud on GitHub, there are several additional steps to have your book also **built** and **deployed** in the cloud with every push to GitHub. The good news is that you only need to do these steps once!
 
-One benefit to this approach compared to the [previous approach](#ghpages) is that your master branch on GitHub will no longer store the rendered book files (i.e., the folders `_book` and `_bookdown_files`). Instead, those files will be present in a separate branch: the `gh-pages` branch. This means that your master branch will contain only the source files, and your `gh-pages` branch will contain only the files from your `_book` folder. Another benefit to this approach is that you are able to make changes to your book source files without needing to locally render the book. This may be useful both when collaborating with yourself or with other people. 
+After the initial setup, building and deploying your site in the cloud is as easy as with the [previous approach](#ghpages): every time you push to your master branch, this will trigger your book to be (re-)built, which will in turn trigger a fresh deploy to your GitHub Pages site at `https://<USER>.github.io/<REPO>`.
+
+One benefit to this approach compared to the [previous approach](#ghpages) is that you are able to make changes to your book source files without needing to locally render the book. Any change to any `.Rmd` file in your book that is pushed to GitHub will set this build-deploy pipeline in motion, even if you do not or cannot build the book locally. This may be useful both when collaborating with yourself or with other people. 
+
+Another benefit to this approach is that your master branch on GitHub will no longer store the rendered book files (i.e., the folders `_book` and `_bookdown_files`). Instead, those files will be present in a separate branch: the `gh-pages` branch. This means that your master branch will contain source files *only*.
 
 
 ### About Travis {#travis}
@@ -66,9 +80,17 @@ In case you are not familiar with Travis CI\index{Travis CI} (https://travis-ci.
 
 ### Setup for continuous integration
 
-Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.]
 
-If you are starting from the [previous approach](#ghpages), we will not need to disable Jekyll (so you may wish to delete the `.nojekyll` file if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below).
+```{block2, publish_start, type='rmdnote'}
+```
+
+
+
+```{block2, undo, type='rmdcaution'}
+If you are starting from a [previous approach](#ghpages), we will not need to disable Jekyll (so you may wish to delete the `.nojekyll` file if created from Chapter \@ref(ghpages)), and if you previously changed your output directory to `"docs"` in the `_bookdown.yml`, you may want to either comment out (`#`) or delete that line to set the default output directory to `_book` (if you want a different directory, watch for replacing that in the code below).
+```
+
+
 
 ### Instruct Travis to build your book from GitHub {#travis-yml}
 
