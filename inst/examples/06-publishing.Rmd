@@ -94,7 +94,7 @@ If you are starting from a [previous approach](#ghpages), we will not need to di
 
 ### Instruct Travis to build your book from GitHub {#travis-yml}
 
-+ Since this Travis service is primarily for checking R packages, you will need a (fake) `DESCRIPTION` file as if the book repository were an R package. You may use the command line to enter `touch DESCRIPTION` (or in R: `file.create('DESCRIPTION')`). The only thing in this file that really matters for a **bookdown** project is the specification of dependencies. All dependencies will be installed via the **devtools** package. Here a dependency corresponds to a package that you plan to use in your book. If a dependency is on CRAN or BioConductor, you can simply list it in the `Imports` field of the `DESCRIPTION` file. If it is a package on GitHub, you will need to include the `USER/REPO` in the `Remotes` field, *and* add the package name to the `Imports` field as well (so GitHub packages will be listed in two places in this file). Below is an example:
++ Since this Travis service is primarily for checking R packages, you will need a (fake) `DESCRIPTION` file as if the book repository were an R package. You may use the command line to enter `touch DESCRIPTION` (or in R: `file.create('DESCRIPTION')`). The only thing in this file that really matters for a **bookdown** project is the specification of dependencies. Here a dependency corresponds to a package that you plan to use in your book. If a dependency is on CRAN or BioConductor, you first list it in the `Imports` field of the `DESCRIPTION` file; this is equivalent to Travis running `library(<PACKAGE>)` before building your book. If it is a package on GitHub, you will need to include the `USER/REPO` in the `Remotes` field (equivalent to `devtools::install_github(<"PACKAGE">)`), *and* add the package name to the `Imports` field as well (so GitHub packages will be listed in two places in this file). Below is an example:
 
     ```dcf
     Package: placeholder
@@ -102,8 +102,8 @@ If you are starting from a [previous approach](#ghpages), we will not need to di
     Title: Does not matter.
     Version: 0.0.1
     URL: https://github.com/<USER>/<REPO>
-    Imports: bookdown, ggplot2
-    Remotes: rstudio/gt
+    Imports: bookdown, ggplot2, icon
+    Remotes: ropenscilabs/icon
     ```
     
     In the `URL` field, fill in your GitHub user name (`<USER>`) and the name of the repository (`<REPO>`). This field is not required by Travis, but can allow you to take advantage of some helpful `browse_*()` functions from the **usethis** package (https://usethis.r-lib.org/).
