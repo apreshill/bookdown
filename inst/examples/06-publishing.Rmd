@@ -4,7 +4,7 @@ As you develop the book, you make the draft book available to the public to get 
 
 ## RStudio Connect
 
-In theory, you can render the book by yourself and publish the output anywhere you want. For example, you can host the HTML files on your own web server. We have provided a function `publish_book()` in **bookdown** to make it very simple to upload your book to https://bookdown.org, which is a website provided by RStudio to host your books for free.\index{bookdown.org} This website is built on top of ["RStudio Connect",](https://www.rstudio.com/products/connect/)\index{RStudio Connect} an RStudio product that allows you to deploy a variety of R-related applications to a server, including R Markdown documents, Shiny applications, R plots, and so on.
+In theory, you can render the book by yourself and publish the output anywhere you want. For example, you can host the HTML files on your own web server. We have provided a function `publish_book()` in **bookdown** to upload your book to https://bookdown.org, which is a website provided by RStudio to host your books for free.\index{bookdown.org} This website is built on top of ["RStudio Connect",](https://www.rstudio.com/products/connect/)\index{RStudio Connect} an RStudio product that allows you to deploy a variety of R-related applications to a server, including R Markdown documents, Shiny applications, R plots, and so on.
 
 You do not have to know much about RStudio Connect to publish your book to bookdown.org. Basically you sign up at https://bookdown.org/connect/, and the first time you try to run `bookdown::publish_book()`\index{bookdown::publish\_book()}, you will be asked to authorize **bookdown** to publish to your bookdown.org account. In the future, you simply call `publish_book()` again and **bookdown** will no longer ask for anything.
 
@@ -72,7 +72,7 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
 
 ### Instruct Travis to build your book from GitHub {#travis-yml}
 
-+ Since this Travis service is primarily for checking R packages, you will need a (fake) `DESCRIPTION` file as if the book repository were an R package. You may use the command line to enter `touch DESCRIPTION` (or in R: `file.create('DESCRIPTION')`). The only thing in this file that really matters for a **bookdown** project is the specification of dependencies. All dependencies will be installed via the **devtools** package. If a dependency is on CRAN or BioConductor, you can simply list it in the `Imports` field of the `DESCRIPTION` file. If it is a package on GitHub, you will need to include the `USER/REPO` in the `Remotes` field, *and* add the package name to the `Imports` field as well (so GitHub packages will be listed in two places in this file). Below is an example:
++ Since this Travis service is primarily for checking R packages, you will need a (fake) `DESCRIPTION` file as if the book repository were an R package. You may use the command line to enter `touch DESCRIPTION` (or in R: `file.create('DESCRIPTION')`). The only thing in this file that really matters for a **bookdown** project is the specification of dependencies. All dependencies will be installed via the **devtools** package. Here a dependency corresponds to a package that you plan to use in your book. If a dependency is on CRAN or BioConductor, you can simply list it in the `Imports` field of the `DESCRIPTION` file. If it is a package on GitHub, you will need to include the `USER/REPO` in the `Remotes` field, *and* add the package name to the `Imports` field as well (so GitHub packages will be listed in two places in this file). Below is an example:
 
     ```dcf
     Package: placeholder
@@ -81,7 +81,7 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
     Version: 0.0.1
     URL: https://github.com/<USER>/<REPO>
     Imports: bookdown, ggplot2
-    Remotes: rstudio/bookdown
+    Remotes: rstudio/gt
     ```
     
     In the `URL` field, fill in your GitHub user name (`<USER>`) and the name of the repository (`<REPO>`). This field is not required by Travis, but can allow you to take advantage of some helpful `browse_*()` functions from the **usethis** package (https://usethis.r-lib.org/).
@@ -112,7 +112,7 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
       branch: master
   ```
 
-  This file tells Travis CI what to do. The `language` key tells Travis to use a virtual machine that has R installed. At a high-level, `script` tells Travis how to build the book; `deploy` gives Travis instructions for deploying the book.
+  This file tells Travis CI what to do. The `language` key tells Travis to use a virtual machine that has R installed. At a high-level, `script` tells Travis how to build the book; `deploy` gives Travis instructions for deploying the book. Be very careful with the indentation of the `.travis.yml` file as it is a YAML file so tabs and white space do matter.
   
 + You may wish to backup your local copies of the `_book` (unless you have modified your `output_dir` in your `_bookdown.yml` file) first, but you can safely delete and ignore both of these folders- these will now be built by Travis. You can open the `.gitignore` file and edit it directly. If your book was created as part of an R Project, your updated `.gitignore` would then look like this:
 
@@ -137,7 +137,7 @@ If you are starting from the [previous approach](#ghpages), we will not need to 
     edit_git_ignore()
     ```
     
-+ **Optional: Caching on Travis**  If you use the [container-based infrastructure](https://docs.travis-ci.com/user/workers/container-based-infrastructure/) on Travis, you can enable caching by using `sudo: false` in `.travis.yml`. Normally you should cache at least two types of directories: the figure directory (e.g., `_main_files`) and the cache directory (e.g., `_main_cache`). These directory names may also be different if you have specified the **knitr** chunk options `fig.path` and `cache.path`, but I'd strongly recommend you not to change these options. The figure and cache directories are stored under the `_bookdown_files` directory of the book root directory. A `.travis.yml` file that has enabled caching of **knitr** figure and cache directories may have additional configurations `sudo` and `cache` like this:
++ **Optional: Caching on Travis**  If you use the [container-based infrastructure](https://docs.travis-ci.com/user/workers/container-based-infrastructure/) on Travis, you can enable caching by using `sudo: false` in `.travis.yml`. Normally you should cache at least two types of directories: the figure directory (e.g., `_main_files`) and the cache directory (e.g., `_main_cache`). These directory names may also be different if you have specified the **knitr** chunk options `fig.path` and `cache.path`, but it's strongly recommended you not change these options. The figure and cache directories are stored under the `_bookdown_files` directory of the book root directory. A `.travis.yml` file that has enabled caching of **knitr** figure and cache directories may have additional configurations `sudo` and `cache` like this:
 
   ```yaml
   language: R
@@ -304,7 +304,7 @@ You *can* update this kind of site, but it is a manual update. In the Netlify UI
 
 ![Screenshot of drag and drop deploy **update** box on Netlify](images/netlify-drag-drop-update.png)
 
-Edit your book, build it locally again, then drag and drop the output directory here again. This workflow is great to quickly share a book prototype, but is not ideal for books you are actively editing or collaborating on. As you might expect, there is an easier way! We can connect GitHub to Netlify and use continuous deployment.
+Edit your book, build it locally again, then drag and drop the output directory here again. This workflow is great to quickly share a book prototype, but is not ideal for books you are actively editing or collaborating on. As you might expect, there is an easier long-term solution! We can connect GitHub to Netlify and use continuous deployment.
 
 ### Continuous deployment
 
@@ -582,7 +582,7 @@ monofont: "Source Code Pro"
 monofontoptions: "Scale=0.7"
 ```
 
-The field `lot: yes` means we want the List of Tables, and similarly, `lof` means List of Figures. The base font size is `12pt`, and we used [Source Code Pro](https://www.fontsquirrel.com/fonts/source-code-pro) as the monospaced (fixed-width) font, which is applied to all program code in this book.
+For the PDF book, the field `lot: yes` means we want the List of Tables, and similarly, `lof` means List of Figures. The base font size is `12pt`, and we used [Source Code Pro](https://www.fontsquirrel.com/fonts/source-code-pro) as the monospaced (fixed-width) font, which is applied to all program code in this book.
 
 In the LaTeX preamble (Section \@ref(yaml-options)), we have a few more settings. First, we set the main font\index{font} to be [Alegreya](https://www.fontsquirrel.com/fonts/alegreya), and since this font does not have the <span style="font-variant:small-caps;">Small Capitals</span> feature, we used the Alegreya SC font.
 
