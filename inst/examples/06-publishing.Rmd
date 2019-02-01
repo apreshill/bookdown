@@ -23,33 +23,69 @@ If you have set up your own RStudio Connect server, you can certainly publish th
 
 You can host your book on GitHub\index{GitHub} for free via GitHub Pages (https://pages.github.com).^[See the [GitHub Pages Help documents](http://bit.ly/2cvloKV) for more information.] The simplest approach is to publish your book as a GitHub Project Page from a `/docs` folder on your `master` branch, which will then be available at `https://<USER>.github.io/<REPO>`. The main benefit to this approach is its simplicity, and the fact that you can track the source files for your book and the published HTML files in the same branch.
 
-To setup your **bookdown** project to publish to a GitHub Project Page, you may follow these steps:
+### The build-and-deploy pipeline sequence
+
+This publishing approach sets up the following flow of events:
+
+1. You start with a local **bookdown** project in a GIT repository that is connected to a GitHub repository. The below steps assume you are on your `master` branch.^[If you are not familiar with GitHub, we suggest you read through the free online book ["Happy Git with R"](https://happygitwithr.com/) first before working through these instructions.]
+1. You change the output directory of your rendered book to a folder named `"docs"`.
+1. You tell GitHub Pages to bypass using Jekyll to build your site.
+1. You build your book locally, then push your `master` branch to your GitHub repository.
+1. The push to `master` triggers GitHub Pages to publish your book at: `https://<USER>.github.io/<REPO>`.
+1. Rinse and repeat! Every push to `master` triggers the online version of your book to update.
+
+
+### Before you begin
+
+Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy. 
 
 ```{block2, publish_start, type='rmdnote'}
-Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy. To create a simple **bookdown** book to practice with instead, we suggest the following steps:
-  
-  + [Make a new repository on GitHub](https://happygitwithr.com/new-github-first.html#make-a-repo-on-github-2),
-  + [Make a new RStudio Project via git clone](https://happygitwithr.com/new-github-first.html#new-rstudio-project-via-git-clone),
-  + From your RStudio Project, run this command in your R console: `bookdown:::bookdown_skeleton(getwd())`,
-  + [Change the title, save, and commit](https://happygitwithr.com/new-github-first.html#make-local-changes-save-commit-1),
-  + [Push your local changes to GitHub](https://happygitwithr.com/new-github-first.html#push-your-local-changes-to-github).                 
+If you don't have an existing book, you can create a simple **bookdown** book to practice with instead:
+      
++ [Make a new repository on GitHub](https://happygitwithr.com/new-github-first.html#make-a-repo-on-github-2),
++ [Make a new RStudio Project via git clone](https://happygitwithr.com/new-github-first.html#new-rstudio-project-via-git-clone),
++ From your RStudio Project, run this command in your R console: `bookdown:::bookdown_skeleton(getwd())`,
++ [Change anything you want and commit](https://happygitwithr.com/new-github-first.html#make-local-changes-save-commit-1),
++ [Push your local changes to GitHub](https://happygitwithr.com/new-github-first.html#push-your-local-changes-to-github).
 ```
 
-1. Open the configuration file `_bookdown.yml`, set the output directory of your book to be `/docs` by adding the line `output_dir: "docs"`, and save this file.
 
-1. Because the **bookdown** HTML output is a static, standalone website, you'll need to tell GitHub that your website is *not* to be built via Jekyll. Jekyll ([jekyllrb.com](http://jekyllrb.com)) is a static website builder, which GitHub Pages supports by default. The key is to create a hidden, empty file named `.nojekyll` in your **bookdown** root directory as follows:
+### Change the output directory of your book
 
-    ```bash
-    # assume you have initialized the git repository,
-    # and are under the directory of the book repository now
-    
-    # create a hidden file .nojekyll
-    touch .nojekyll
-    ```
+In your local **bookdown** project, find the `_bookdown.yml` and set the output directory of your book to be `/docs` by adding this line:
 
-    If you are on Windows, you may not have the `touch` command, and you can create the file in R using `file.create('.nojekyll')`. 
+```yaml
+output_dir: "docs"
+```
 
-1. Build your book locally, and commit/push to GitHub (including the `.nojekyll` file). 
+Save this file and close it.
+
+### Tell GitHub Pages to bypass Jekyll
+
+Create a hidden, empty file named `.nojekyll` from within R in your **bookdown** project root directory:
+
+```
+file.create(".nojekyll")
+```
+
+If you are using RStudio, you may need to refresh the viewer pane to see this new file. You can also use the terminal to create this file with the command `touch .nojekyll`.
+
+This file is necessary because GitHub Pages supports Jekyll ([jekyllrb.com](http://jekyllrb.com)), a static website builder, by default. Because the **bookdown** HTML output is a static, standalone website, you need to tell GitHub that your website is *not* to be built via Jekyll. 
+
+### Build your book and push to GitHub
+
+Use whichever method from Chapter \@ref(build-the-book) you prefer. 
+
+```{block2, type='rmdwarning'}
+If you have previously added directories like `_book` and `_bookdown_files` to your remote GitHub repository, you'll want to take a few more steps to remove them:
+
++ Delete the folders locally
++ From the terminal: 
+  + `git rm -r --cache _book/`
+  + `git rm -r --cache _bookdown_files/`
+```
+
+### Activate your GitHub Pages site
 
 1. Go to your repository on GitHub at `https://github.com/<USER>/<REPO>` and confirm that you see a `/docs` folder and a `.nojekyll` file. 
 
@@ -57,12 +93,14 @@ Start with a **bookdown** project linked to a remote GitHub repository that you 
 
 ![Screenshot of selecting master branch `/docs` folder for GitHub Pages](images/ghpages-masterdocs.png)
 
-After you have set up GIT, the rest of the work can be automated via a script (Shell, R, or Makefile, depending on your preference). Basically, you compile the book to HTML locally, then run git commands to push the files to GitHub. However, this approach assumes that:
+### Drawbacks and alternatives
 
-1. You would like to store the rendered book (i.e., the `/docs` folder) on GitHub in your master branch.
-1. You are satisfied using a project domain name like `https://<USER>.github.io/<REPO>`.
+This approach assumes:
 
-Although this is a straight-forward approach to publishing your book, it can be very handy to automate the publishing process completely on the cloud, so that once it is set up correctly, all you have to do is edit the Rmd source files and push them to GitHub, and your book will be automatically built and published from the server side. To automate building your book in the cloud, you will want to utilize Travis CI\index{Travis CI} ([travis-ci.org](https://travis-ci.org)).
+1. You would like to store the rendered book (i.e., the `/docs` folder) on GitHub in your `master` branch. 
+1. You are satisfied using a project domain name like `https://<USER>.github.io/<REPO>`. *Note that you can use custom domains with GitHub Pages, described [here](https://help.github.com/articles/using-a-custom-domain-with-github-pages/).*
+
+Although this is a straight-forward approach to publishing your book, it can be very handy to automate the publishing process completely on the cloud, so that once it is set up correctly, all you have to do is edit the `.Rmd` source files and push them to GitHub, and your book will be automatically built and published from the server side. To automate building your book in the cloud, you will want to utilize Travis CI\index{Travis CI} ([travis-ci.org](https://travis-ci.org)).
 
 ## Netlify
 
@@ -134,15 +172,16 @@ Connecting Travis CI to a GitHub repository means that whenever you push to that
 
 The major benefit to using Travis within a **bookdown** project is that you are able to make changes to your book source files without needing to locally render the book. Any change to any `.Rmd` file in your book that is pushed to GitHub will set this build-deploy pipeline in motion, even if you do not or cannot build the book locally. This may be useful both when collaborating with yourself or with other people. 
 
-However, once you get to the stage where your book files are **stored** in the cloud on GitHub, there are several additional (and sometimes complicated) steps to have your book also **built** and **deployed** in the cloud with every push to GitHub. The good news is that you only need to do these steps once! 
+However, once you get to the stage where your book files are **stored** in the cloud on GitHub, there are several additional (and sometimes complicated) steps to have your book also **built** and **deployed** in the cloud with every push to GitHub. The good news is that you only need to do these steps once for every project! 
 
 
-### 01: GitHub Pages from branch {#travis-ghpages}
+### 01: Deploy from branch {#travis-branch}
 
-After the initial setup, building and deploying your site in the cloud is as easy as with the [previous approach](#ghpages): every time you push to your master branch, this will trigger your book to be (re-)built, which will in turn trigger a fresh deploy to your GitHub Pages site at `https://<USER>.github.io/<REPO>`.
+This is a good workflow to start with if you are newer to using Travis. We'll have Travis push the built book to the `gh-pages` branch, and then we will deploy the **bookdown** site from that branch (instead of the `master` branch). We'll use either GitHub Pages or Netlify to publish the site- the workflows are very similar. You will never need to directly push any changes to the `gh-pages` branch- this is a branch that only Travis will push to. Deploys from the `gh-pages` branch **only** should be be published automatically. After the initial setup, every time you push to your master branch, this will trigger your book to be (re-)built on the `gh-pages` branch, which will in turn trigger a fresh deploy. 
 
-Another benefit to this approach is that your master branch on GitHub will no longer store the rendered book files (i.e., the folders `_book` and `_bookdown_files`). Instead, those files will be present in a separate branch: the `gh-pages` branch. This means that your master branch will contain source files *only*.
+The major benefit to this approach is that your master branch on GitHub will no longer store the rendered book files (i.e., the folders `_book` and `_bookdown_files`). Instead, those files will be present in a separate branch: the `gh-pages` branch. This means that your master branch will contain source files *only*.
 
+A second benefit here is that you will *not* experience a double-deployment problem. This would happen if for example you triggered a new Travis build with a push from your `master` branch, *and* deployed from the same branch. What you would see then is that your **bookdown** site would go down temporarily after you push to GitHub, because no book would be there to publish! So, this workflow is nice as deploys are only triggered once your book is built by Travis. In more advanced workflows using Netlify that we discuss later, we will show ways to keep Netlify from trying to build on every push. But for this reason, we encourage you start here with Travis and **bookdown**.
 
 #### Setup for continuous integration
 
@@ -215,14 +254,17 @@ If you are starting from a [previous approach](#ghpages), we will not need to di
     
     You will still be able to build and preview your book locally (this will re-create your local `_book` folder), but those folders will no longer appear on your master branch in your remote GitHub repository.^[You must edit the `.gitignore` file **and** delete these local files, then commit/push to GitHub *before* building the book locally again for these changes to take effect.] 
     
-    You could also use the function [`edit_git_ignore()`](https://usethis.r-lib.org/reference/edit.html) from the **usethis** package from within your R console. 
+    You could also use the **usethis** package to edit this file from within your R console. 
     
-    ```{r eval = FALSE}
+    ```{r usegitignore, eval = FALSE}
     ## install if needed:
     ## install.packages("usethis")
 
     library(usethis)
+    # edit by hand
     edit_git_ignore()
+    # or add to the text file 
+    use_git_ignore(c("_book", "_bookdown_files"))
     ```
    
 + **Optional: Caching on Travis**  If you use the [container-based infrastructure](https://docs.travis-ci.com/user/workers/container-based-infrastructure/) on Travis, you can enable caching by using `sudo: false` in `.travis.yml`. Caching on Travis is especially useful for saving build time if your book is very time-consuming to build.  Normally you should cache at least two types of directories: the figure directory (e.g., `_main_files`) and the cache directory (e.g., `_main_cache`). These directory names may also be different if you have specified the **knitr** chunk options `fig.path` and `cache.path`, but I strongly recommend not changing these options. The figure and cache directories are stored under the `_bookdown_files` directory in the root directory of your book. A `.travis.yml` file that has enabled caching of **knitr** figure and cache directories may have additional `sudo` and `cache` configurations like this:
@@ -280,36 +322,7 @@ The Travis documentation shows how to deploy a site to GitHub Pages after a succ
     Deploying application
     Done. Your build exited with 0.
     ```
-
-#### Activate GitHub Pages {#activate-ghpages}
-
-Following a successful build on Travis, navigate to your GitHub repository (you can do this from Travis by clicking on the octocat logo at the top of the page, or `usethis::browse_github()`). 
-
-+ From `https://github.com/<USER>/<REPO>`, confirm that you see a `gh-pages` branch. 
-
-+ Click on the repository's settings and under "GitHub Pages" and change the "Source" to be "gh-pages branch": 
     
-    ![Screenshot of selecting gh-pages branch for GitHub Pages](images/ghpages-branch.png)
-
-+ **Optional: test your pipeline** You only need to do the steps above in sequence *once* per project. To see how this works, you can test the pipeline now. In your local **bookdown** project, make a small insignificant change- you could add a `subtitle` field in the YAML of your `index.Rmd` file like:
-
-    ```
-    --- 
-    title: "A Minimal Book Example"
-    subtitle: "I'm a book built in the cloud!"
-    site: bookdown::bookdown_site
-    ---
-    ```
-    
-    Commit and push to GitHub (note: you do not have to build your book locally first!), then log onto Travis (`https://travis-ci.org/<USER>/<REPO>`) and GitHub (`https://github.com/<USER>/<REPO>`) and watch as your book gets built and committed to your `gh-pages` branch. A few minutes after your last push to GitHub, you should see your extra line of text appear at `https://<USER>.github.io/<REPO>`. 
-    Alternatively you could run these **usethis** functions in your R console to pull up both relevant websites:
-    ```{r eval = FALSE}
-    library(usethis)
-    browse_travis()
-    browse_github()
-    ```
-     
-
 #### Optional: separate build and deploy scripts
 
 With this setup working, you *could* separate your build and deploy scripts, rather than keeping them within a single `.travis.yml` file. With more complicated book builds, this may be preferred, and has the added benefit of allowing you to customize the commit message from Travis to your `gh-pages` branch. 
@@ -367,6 +380,42 @@ You can further customize your commit messages to be more specific than "Update 
 
 + In your `_deploy.sh` file, **edit** the `git commit -m "Update the book" || true` line, replacing the generic commit message `"Update the book"` with `"$DEPLOY_MSG"`. 
 
+    
+#### 01a: To GitHub Pages {#travis-ghpages}
+
+every time you push to your master branch, this will trigger your book to be (re-)built, which will in turn trigger a fresh deploy to your GitHub Pages site at `https://<USER>.github.io/<REPO>`.
+
+
+#### Activate GitHub Pages {#activate-ghpages}
+
+Following a successful build on Travis, navigate to your GitHub repository (you can do this from Travis by clicking on the octocat logo at the top of the page, or `usethis::browse_github()`). 
+
++ From `https://github.com/<USER>/<REPO>`, confirm that you see a `gh-pages` branch. 
+
++ Click on the repository's settings and under "GitHub Pages" and change the "Source" to be "gh-pages branch": 
+    
+    ![Screenshot of selecting gh-pages branch for GitHub Pages](images/ghpages-branch.png)
+
++ **Optional: test your pipeline** You only need to do the steps above in sequence *once* per project. To see how this works, you can test the pipeline now. In your local **bookdown** project, make a small insignificant change- you could add a `subtitle` field in the YAML of your `index.Rmd` file like:
+
+    ```
+    --- 
+    title: "A Minimal Book Example"
+    subtitle: "I'm a book built in the cloud!"
+    site: bookdown::bookdown_site
+    ---
+    ```
+    
+    Commit and push to GitHub (note: you do not have to build your book locally first!), then log onto Travis (`https://travis-ci.org/<USER>/<REPO>`) and GitHub (`https://github.com/<USER>/<REPO>`) and watch as your book gets built and committed to your `gh-pages` branch. A few minutes after your last push to GitHub, you should see your extra line of text appear at `https://<USER>.github.io/<REPO>`. 
+    Alternatively you could run these **usethis** functions in your R console to pull up both relevant websites:
+    ```{r eval = FALSE}
+    library(usethis)
+    browse_travis()
+    browse_github()
+    ```
+     
+
+
 #### Demo repository
 
 All above scripts and configurations can be found in the `bookdown-travis-branch-deploy` repository: [github.com/apreshill/bookdown-travis-branch-deploy](https://github.com/apreshill/bookdown-travis-branch-deploy).
@@ -421,7 +470,7 @@ This is a good workflow to start off integrating Travis and Netlify. We'll have 
     ---
     ```
     Commit and push to GitHub (note: you do not have to build your book locally first!), then log onto Travis (`https://travis-ci.org/<USER>/<REPO>`) and GitHub (`https://github.com/<USER>/<REPO>`) and watch as your book gets built and committed to your `gh-pages` branch. Alternatively you could run these **usethis** functions in your R console to pull up both relevant websites:
-    ```{r eval = FALSE}
+    ```{r usebrowse, eval = FALSE}
     library(usethis)
     browse_travis()
     browse_github()
@@ -437,6 +486,8 @@ All of the workflows thus far that we have covered that employ Travis to build y
 
 + Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy.^[If you do not have one, you may wish to follow a "New project, GitHub first" workflow (See https://happygitwithr.com/new-github-first.html). After creating a new RStudio Project via git clone, you may run this command in your R console to build a simple **bookdown** book to practice with `bookdown:::bookdown_skeleton(getwd())`.] 
 
++ Very important! Your GitHub repo must have at least a README file in it; it cannot be empty.
+
 + Add a `DESCRIPTION` file (update the `URL`, `Imports`, and `Remotes` fields as needed):
 
     ```dcf
@@ -449,7 +500,13 @@ All of the workflows thus far that we have covered that employ Travis to build y
     Remotes: rstudio/bookdown
     ```
 
-+ You may wish to back up your local copies of the `_book` and `_bookdown_files` first (unless you have modified your `output_dir` in your `_bookdown.yml` file), but you can safely delete and ignore both of these folders- these will now be built by Travis. An easy way to edit the `.gitignore` file is to use the **usethis** package (https://usethis.r-lib.org), with the function [`edit_git_ignore()`](https://usethis.r-lib.org/reference/edit.html). If your book was created as part of an R Project, your updated `.gitignore` would then look like this:
++ You may wish to back up your local copies of the `_book` and `_bookdown_files` first (unless you have modified your `output_dir` in your `_bookdown.yml` file), but you can safely delete and ignore both of these folders- these will now be built by Travis. An easy way to edit the `.gitignore` file is to use the **usethis** package (https://usethis.r-lib.org):
+    ```{r ref.label="usegitignore", eval = FALSE}
+
+    ```
+
+
+If your book was created as part of an R Project, your updated `.gitignore` would then look like this:
 
     ```
     .Rproj.user
