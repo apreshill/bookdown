@@ -19,6 +19,175 @@ bookdown::publish_book(render = "local")
 
 If you have set up your own RStudio Connect server, you can certainly publish the book there instead of at [bookdown.org](https://bookdown.org).
 
+## Netlify Drop
+
+
+
+[Netlify Drop](https://app.netlify.com/drop) is a free publishing option that does not require a Netlify account to start, and does not rely on your **bookdown** project being in a GitHub repository. All you need for this approach is a **bookdown** project that you can build locally. Click [here](https://youtu.be/-LRlQ_jaLAU) to watch a quick video introduction to [Netlify Drop](https://app.netlify.com/drop).
+
+### The build-and-deploy pipeline sequence
+
+This publishing approach sets up the following flow of events:
+
+1. You start with a local **bookdown** project.
+1. You build your book locally to an output directory of choice (`_book` by default).
+1. You go to [Netlify Drop](https://app.netlify.com/drop), and drag & drop the output directory into the Netlify browser-based user interface.
+1. You make changes to your book, rebuild locally, then drag & drop the output directory again into Netlify to update.
+
+The above is an overview- read on for step-by-step instructions.
+
+### Before you begin
+
+Start with a **bookdown** project (it does not need to be in GitHub!). 
+
+```{block2, type='rmdnote'}
+If you don't have an existing book, you can create a simple **bookdown** book to practice with instead:
+
++ Create a new project with the RStudio Project Wizard by doing *File > New Project > New Directory > Book Project using bookdown*.
+```
+
+### Build your book
+
+From your **bookdown** project, build your book locally using whichever method from Chapter \@ref(build-the-book) you prefer.
+
+### Deploy your site
+
+Go to Netlify Drop ([netlify.com/drop](https://app.netlify.com/drop)) where you should see a box like this:
+
+![Screenshot of drag & drop deploy box on Netlify](images/netlify-drop.png)
+
+Then drag and drop the output directory from your **bookdown** project (`_book` by default, unless you changed this in your `_bookdown.yml` file). You should see your book deploy quickly with a random subdomain name of the form `http(s)://random-word-12345.netlify.com`.
+
+You'll also see a notice that unclaimed sites are deleted after 24 hours. You can sign up for a Netlify account to claim your site and keep it online permanently.
+
+### *Optional: Sign up for Netlify*
+
+Click on the *Sign Up for Netlify* link. Sign up with *GitHub* to connect your GitHub and Netlify accounts (as shown below). If you use a different version control service, select GitLab or BitBucket instead.
+
+![Sign up for Netlify through GitHub](images/netlify-sign-up.png)
+
+### *Optional: Update your site*
+
+After signing up for Netlify, you *can* update this kind of site, but it is a manual update. Go to [Netlify.com](https://www.netlify.com/) and navigate to find your site, then click on *Deploys*. You should see this box (you may need to scroll to the bottom of this page):
+
+![Screenshot of drag and drop deploy **update** box on Netlify](images/netlify-drag-drop-update.png)
+
+Edit your book, build it locally again, then drag and drop the output directory here again. 
+
+### *Optional: change the default subdomain* {#netlify-subdomain} 
+
+(ref:netlify-subdomain) Navigate to your site's landing page on [Netlify.com](https://www.netlify.com/), click on *Overview > Site Settings*. Under *Site information*, click on *Change site name* and update to `http(s)://<SUBDOMAIN-YOU-WANT-HERE>.netlify.com`. If you want to use a different domain, you need to configure some DNS records of the domain to point it to the Netlify server. 
+
+(ref:netlify-subdomain)
+
+### Drawbacks and alternatives
+
+This workflow is great to quickly share a book prototype. However, if you opt to not claim your site, the link will expire in 24 hours. Even if you do claim your site and set up a Netlify account, this workflow is not ideal for books you are actively editing or collaborating on because every time you update your local version of the book, you need to manually upload the book to Netlify. You also aren't reaping the benefits of version control with this approach. As you might expect, there is an easier long-term solution! We can connect GitHub to Netlify and use [continuous deployment](#netlify-cd).
+
+## Netlify continuous deployment {#netlify-cd}
+
+Netlify ([netlify.com](https://www.netlify.com/)) also offers continuous deployment as a free option for hosting your static **bookdown** site, similiar to [GitHub Pages](#ghpages). In comparing the two, Netlify offers a few useful additional features that GitHub Pages does not, like [branch deploys](https://www.netlify.com/docs/continuous-deployment/#branches-deploys), [deploy previews](https://www.youtube.com/watch?v=s_4UL9oAcVE), and simple [redirect rules](https://www.netlify.com/docs/redirects/).^[For a more thorough comparison of Netlify versus GitHub Pages, see: https://yihui.name/en/2017/06/netlify-instead-of-github-pages/] When you create a static site through Netlify, your website will be online in a few seconds with a random subdomain name of the form `http(s)://random-word-12345.netlify.com` provided by Netlify (you can customize the name after making an account). 
+
+Continuous deployment means that when you push your code to a Git(Hub) repository, Netlify detects this push, then automatically publishes the updated site for you- no manual steps are needed after the initial setup. As described in the Netlify documentation (https://www.netlify.com/docs/continuous-deployment/):
+
+> "Continuous deployment works by connecting a Git repository to a Netlify site and keeping the two in sync."
+
+GitHub Pages is another method for continuous deployment, described in Chapter \@ref(ghpages), which similarly worked by connecting a GitHub repository to a GitHub Pages Project site and keeping the two in sync.
+
+### The build-and-deploy pipeline sequence
+
+This publishing approach sets up the following flow of events:
+
+1. You start with a local **bookdown** project in a GIT repository that is connected to a GitHub repository. The below steps assume you are on your `master` branch.
+1. You log in to Netlify and create a new site from GitHub.
+1. You set the Netlify publish directory to be your book's output directory (the default is `_book`).
+1. You build your book locally, then push your `master` branch to your GitHub repository.
+1. The push to `master` triggers Netlify to publish your book from the output directory at: `http(s)://random-word-12345.netlify.com`.
+1. Rinse and repeat! Every push to `master` triggers the online version of your book to update on your Netlify site.
+
+The above is an overview- read on for step-by-step instructions.
+
+### Before you begin
+
+1. You need a GitHub (https://github.com/) account.^[If you are not familiar with GitHub, we suggest you read through the free online book ["Happy Git with R"](https://happygitwithr.com/) first before working through these instructions.]
+
+1. You need a Netlify (https://netlify.com/) account connected to your GitHub account.
+
+1. Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy. 
+
+    ```{block2, publish_start, type='rmdnote'}
+    ```
+
+1. If you have been trying out other publishing approaches, you may want to undo some things in your **bookdown** project:
+
+    ```{block2, publish_undo, type='rmdwarning'}
+    + Delete the `.nojekyll` file locally if you made one- you don't need it.
+    + Switch your output directory back to `_book` (the default). In your `_bookdown.yml` file, you can either comment out that line (`#`) or delete it.
+      + If you want a different output directory, replace all future instances of `_book` with your output directory.
+    + Edit your `.gitignore` to make sure that it does **not** include your output directory (i.e., `_book`). From R, you can do [`usethis::edit_git_ignore()`](https://usethis.r-lib.org/reference/edit.html).
+    + Clean up commited files. If you placed a directory like `docs` in your GitHub repo, you need to do an extra step in the terminal to remove it with:<br>
+    `git rm -r --cache docs/`<br>
+    `git commit -m 'Remove the docs folder'`<br>
+    `git push origin master`
+    ```
+
+
+
+### Sign up for Netlify
+
+To setup a new account, navigate to [Netlify](https://www.netlify.com/) and click on the *Sign Up* link. Sign up with *GitHub* to connect your GitHub and Netlify accounts (as shown below). If you use a different version control service, select GitLab or BitBucket instead.
+
+![Sign up for Netlify through GitHub](images/netlify-sign-up.png)
+
+### Create a new Netlify site
+
++ Log in to Netlify.
+
++ Select *New site from Git*. 
+
++ Follow these next steps within Netlify's *Create a new site* wizard:
+
+  + *Step 1: Connect to Git provider.* Select GitHub. At this point, you may see a pop-up to let you know that Netlify is being authorized to access your GitHub. 
+
+  + *Step 2: Pick a repository.* Find the Git repository attached to your **bookdown** project and select it. You can select from all of your personal repositories, or use the drop-down to select an organization that you are a part of. 
+
+  + *Step 3: Build options, and deploy!* Start with deploying the master branch only. For the "Basic build settings", leave the Build Command blank. For the Publish Directory, choose your output directory- this will be `_book` by default (no quotes needed).
+
+### (Re-)Build your book
+
+In your local **bookdown** project, make a small insignificant change- you could add a `subtitle` field in the YAML of your `index.Rmd` file like:
+
+```
+--- 
+title: "A Minimal Book Example"
+subtitle: "I'm a book continuously deployed on Netlify!"
+site: bookdown::bookdown_site
+---
+```
+    
+Build your book locally, then commit and push all changes to GitHub.
+
+### View on GitHub
+
+View your GitHub account in your browser, navigate to your **bookdown** repository, and verify that all the rendered book files have been pushed to it successfully. These will be in a folder called `_book` (unless you changed your `output_dir` in your `_bookdown.yml` file).
+
+### View on Netlify
+
+On Netlify, go to your site's page and click on *Deploy* to watch the deploy progress. A few minutes after your last push to GitHub, you should see your extra line of text appear at `http(s)://random-word-12345.netlify.com`.
+
+### *Optional: change the default subdomain*
+
+You may want to change the default subdomain given by Netlify, described previously in Chapter \@ref(netlify-subdomain).
+
+(ref:netlify-subdomain)
+
+### Drawbacks and alternatives
+
+This workflow is identical to that described in \@ref(ghpages) using GitHub Project Pages. Using Netlify requires an additional service, but that addition does not add any complexity in terms of accounts (if you sign up using your GitHub account) or file structures present in your repository. These two approaches are basically the same, and in fact you can host the same book source files on *both* a GitHub Project Page and a Netlify site. 
+
+The main downside to both of these approaches is that ultimately the rendered book files are stored in your `master` branch on GitHub. Some users prefer to keep the `master` branch clear of all non-source files (i.e., `.html` files); if you are one of these users, you would probably prefer to use [Travis](#travis).
+
+
 ## GitHub Pages {#ghpages}
 
 You can host your book on GitHub\index{GitHub} for free via GitHub Pages (https://pages.github.com).^[See the [GitHub Pages Help documents](http://bit.ly/2cvloKV) for more information.] The simplest approach is to publish your book as a [GitHub Project Page](https://help.github.com/en/articles/user-organization-and-project-pages#project-pages-sites) from a `/docs` folder on your `master` branch, which will then be available at `https://<USER>.github.io/<REPO>`. The main benefit to this approach is its simplicity, and the fact that you can track the source files for your book and the published HTML files in the same branch.
@@ -105,166 +274,12 @@ In a browser, navigate to your repository on GitHub at `https://github.com/<USER
 This approach assumes:
 
 1. You would like to store the rendered book (i.e., the `/docs` folder) on GitHub in your `master` branch. 
-1. You are satisfied using a project domain name like `https://<USER>.github.io/<REPO>`.^[Note that you can use custom domains with GitHub Pages, see: https://help.github.com/articles/using-a-custom-domain-with-github-pages/.]
+1. You are satisfied using (the default) project domain name like `https://<USER>.github.io/<REPO>`.^[Note that you can use custom domains with GitHub Pages, see: https://help.github.com/articles/using-a-custom-domain-with-github-pages/.]
 
 A very similar approach is to use Netlify continuous deployment, in which you connect a GitHub repository to a site published by Netlify. This approach is described in \@ref(netlify-cd).
 
 Although it is relatively straight-forward approach to publish your book from a folder on your `master` branch, it means that you always need to build the book locally first, then push to send the built book online to GitHub. It can be very handy to instead automate the publishing process even more by building the book using a cloud service. Once set up, all you have to do is edit the `.Rmd` source files and push them to GitHub, and your book will be automatically built and published from the server side. To use this kind of cloud-based publishing workflow, you will want to utilize Travis CI\index{Travis CI} ([travis-ci.org](https://travis-ci.org)), discussed in sections \@ref(travis-branch) and \@ref(travis-nobranch).
 
-## Netlify
-
-Netlify ([netlify.com](https://www.netlify.com/)) is another free option for hosting your static **bookdown** site, similiar to [GitHub Pages](#ghpages). However, Netlify offers a few useful additional features that GitHub Pages does not, like [branch deploys](https://www.netlify.com/docs/continuous-deployment/#branches-deploys), [deploy previews](https://www.youtube.com/watch?v=s_4UL9oAcVE), and simple [redirect rules](https://www.netlify.com/docs/redirects/).^[For a more thorough comparison of Netlify versus GitHub Pages, see: https://yihui.name/en/2017/06/netlify-instead-of-github-pages/] When you create a static site through Netlify, your website will be online in a few seconds with a random subdomain name of the form `http(s)://random-word-12345.netlify.com` provided by Netlify (you can customize the name). 
-
-To setup a new account, navigate to [Netlify](https://www.netlify.com/) and click on the *Sign Up* link. Sign up with *GitHub* to connect your GitHub and Netlify accounts (as shown below). If you use a different version control service, select GitLab or BitBucket instead.
-
-![Sign up for Netlify through GitHub](images/netlify-sign-up.png)
-
-
-### Drag-and-drop deploy
-
-Even though we encouraged you to sign up by linking Netlify to your GitHub account, drag-and-drop deploy is a Netlify publishing option that does not rely on your **bookdown** project being in a GitHub repository. All you need for this approach is a **bookdown** project that you can build locally.
-
-#### The build-and-deploy pipeline sequence
-
-This publishing approach sets up the following flow of events:
-
-1. You start with a local **bookdown** project.
-1. You build your book locally to an output directory of choice (`_book` by default).
-1. You log in to Netlify, and drag and drop the output directory into the Netlify browser-based user interface.
-1. You make changes to your book, rebuild locally, then drag and drop the output directory again into Netlify to update.
-
-The above is an overview- read on for step-by-step instructions.
-
-#### Before you begin
-
-1. You need a Netlify (https://netlify.com/) account.
-
-1. Start with a **bookdown** project (it does not need to be in GitHub!). 
-
-    ```{block2, type='rmdnote'}
-    If you don't have an existing book, you can create a simple **bookdown** book to practice with instead:
-
-    + Create a new project with the RStudio Project Wizard by doing *File > New Project > New Directory > Book Project using bookdown*.
-    ```
-
-#### Build your book
-
-From your **bookdown** project, build your book locally using whichever method from Chapter \@ref(build-the-book) you prefer.
-
-#### Deploy your site
-
-Log in to Netlify and scroll to the bottom of the landing page where you should see a box like this:
-
-![Screenshot of drag and drop deploy box on Netlify](images/netlify-drag-drop.png)
-
-Then drag and drop the output directory from your **bookdown** project (`_book` by default, unless you changed this in your `_bookdown.yml` file). You should see your book deploys quickly with a random subdomain name of the form `http(s)://random-word-12345.netlify.com`.
-
-#### Update your site
-
-You *can* update this kind of site, but it is a manual update. Go to [Netlify.com](https://www.netlify.com/) and navigate to find your site, then click on *Deploys*. You should see this box (you may need to scroll to the bottom of this page):
-
-![Screenshot of drag and drop deploy **update** box on Netlify](images/netlify-drag-drop-update.png)
-
-Edit your book, build it locally again, then drag and drop the output directory here again. 
-
-#### *Optional: change the default subdomain* {#netlify-subdomain} 
-
-(ref:netlify-subdomain) Navigate to your site's landing page on [Netlify.com](https://www.netlify.com/), click on *Overview > Site Settings*. Under *Site information*, click on *Change site name* and update to `http(s)://<SUBDOMAIN-YOU-WANT-HERE>.netlify.com`. If you want to use a different domain, you need to configure some DNS records of the domain to point it to the Netlify server. 
-
-(ref:netlify-subdomain)
-
-#### Drawbacks and alternatives
-
-This workflow is great to quickly share a book prototype, but is not ideal for books you are actively editing or collaborating on because every time you update your local version of the book, you need to manually upload the book to Netlify. You also aren't reaping the benefits of version control with this approach. As you might expect, there is an easier long-term solution! We can connect GitHub to Netlify and use [continuous deployment](#netlify-cd).
-
-### Continuous deployment {#netlify-cd}
-
-Continuous deployment means that when you push your code to a Git(Hub) repository, Netlify detects this push, then automatically publishes the updated site for you- no manual steps are needed after the initial setup. As described in the Netlify documentation (https://www.netlify.com/docs/continuous-deployment/):
-
-> "Continuous deployment works by connecting a Git repository to a Netlify site and keeping the two in sync."
-
-GitHub Pages is another method for continuous deployment, described in Chapter \@ref(ghpages), which similarly worked by connecting a GitHub repository to a GitHub Pages Project site and keeping the two in sync.
-
-#### Before you begin
-
-1. You need a Netlify (https://netlify.com/) account connected to your GitHub account.
-
-1. Start with a **bookdown** project linked to a remote GitHub repository that you can push/pull to from your local copy. 
-
-    ```{block2, publish_start, type='rmdnote'}
-    ```
-
-1. If you have been trying out other publishing approaches, you may want to undo some things in your **bookdown** project:
-
-    ```{block2, publish_undo, type='rmdwarning'}
-    + Delete the `.nojekyll` file locally if you made one- you don't need it.
-    + Switch your output directory back to `_book` (the default). In your `_bookdown.yml` file, you can either comment out that line (`#`) or delete it.
-      + If you want a different output directory, replace all future instances of `_book` with your output directory.
-    + Edit your `.gitignore` to make sure that it does **not** include your output directory (i.e., `_book`). From R, you can do [`usethis::edit_git_ignore()`](https://usethis.r-lib.org/reference/edit.html).
-    + Clean up commited files. If you placed a directory like `docs` in your GitHub repo, you need to do an extra step in the terminal to remove it with:<br>
-    `git rm -r --cache docs/`<br>
-    `git commit -m 'Remove the docs folder'`<br>
-    `git push origin master`
-    ```
-
-#### The build-and-deploy pipeline sequence
-
-This publishing approach sets up the following flow of events:
-
-1. You start with a local **bookdown** project in a GIT repository that is connected to a GitHub repository. The below steps assume you are on your `master` branch.
-1. You log in to Netlify and create a new site from GitHub.
-1. You set the Netlify publish directory to be your book's output directory (the default is `_book`).
-1. You build your book locally, then push your `master` branch to your GitHub repository.
-1. The push to `master` triggers Netlify to publish your book from the output directory at: `http(s)://random-word-12345.netlify.com`.
-1. Rinse and repeat! Every push to `master` triggers the online version of your book to update on your Netlify site.
-
-The above is an overview- read on for step-by-step instructions.
-
-#### Create a new Netlify site
-
-+ Log in to Netlify.
-
-+ Select *New site from Git*. 
-
-+ Follow these next steps within Netlify's *Create a new site* wizard:
-
-  + *Step 1: Connect to Git provider.* Select GitHub. At this point, you may see a pop-up to let you know that Netlify is being authorized to access your GitHub. 
-
-  + *Step 2: Pick a repository.* Find the Git repository attached to your **bookdown** project and select it. You can select from all of your personal repositories, or use the drop-down to select an organization that you are a part of. 
-
-  + *Step 3: Build options, and deploy!* Start with deploying the master branch only. For the "Basic build settings", leave the Build Command blank. For the Publish Directory, choose your output directory- this will be `_book` by default (no quotes needed).
-
-#### (Re-)Build your book
-
-In your local **bookdown** project, make a small insignificant change- you could add a `subtitle` field in the YAML of your `index.Rmd` file like:
-
-```
---- 
-title: "A Minimal Book Example"
-subtitle: "I'm a book continuously deployed on Netlify!"
-site: bookdown::bookdown_site
----
-```
-    
-Build your book locally, then commit and push all changes to GitHub.
-
-#### View on GitHub
-
-View your GitHub account in your browser, navigate to your **bookdown** repository, and verify that all the files have been pushed to it successfully.
-
-#### View on Netlify
-
-On Netlify, go to your site's page and click on *Deploy* to watch the deploy progress. A few minutes after your last push to GitHub, you should see your extra line of text appear at `http(s)://random-word-12345.netlify.com`.
-
-#### *Optional: change the default subdomain*
-
-You may want to change the default subdomain given by Netlify, described previously in Chapter \@ref(netlify-subdomain).
-
-(ref:netlify-subdomain)
-
-#### Drawbacks and alternatives
-
-This workflow is identical to that described in \@ref(ghpages) using GitHub Project Pages. This approach requires an additional service, Netlify, but that addition does not add any complexity in terms of file structures present in your repository. These two approaches are basically the same, and in fact you can host the same book source files on *both* a GitHub Project Page and a Netlify site. The main downside to both of these approaches is that ultimately the rendered book files are stored in your `master` branch on GitHub. Some users prefer to keep the `master` branch clear of all non-source files (i.e., `.html` files); if you are one of these users, you would probably prefer to use [Travis](#travis).
 
 ## Using Travis with branches {#travis-branch}
 
