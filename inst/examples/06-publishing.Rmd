@@ -133,9 +133,9 @@ The above is an overview- read on for step-by-step instructions.
 
 
 
-### Sign up for Netlify
+### Sign up for Netlify {#netlify-new}
 
-To setup a new account, navigate to [Netlify](https://www.netlify.com/) and click on the *Sign Up* link. Sign up with *GitHub* to connect your GitHub and Netlify accounts (as shown below). If you use a different version control service, select GitLab or BitBucket instead.
+To setup a new account, go to [Netlify](https://www.netlify.com/) and click on the *Sign Up* link. Sign up with *GitHub* to connect your GitHub and Netlify accounts (as shown below). If you use a different version control service, select GitLab or BitBucket instead.
 
 ![Sign up for Netlify through GitHub](images/netlify-sign-up.png)
 
@@ -511,6 +511,8 @@ Following a successful build on Travis, navigate to your GitHub repository (you 
 
 
 + **Use Netlify** 
+
+  + [Sign up for Netlify with GitHub](#netlify-new)
 
   + Log in to Netlify, then do: *New site from Git > GitHub*
 
